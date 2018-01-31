@@ -23,7 +23,7 @@ import java.util.List;
 import static com.android.volley.VolleyLog.TAG;
 
 /**
- * Created by bastienwcs on 31/01/18.
+ * Requête vers l'API Amadeus.
  */
 
 public class AmadeusAPI {
@@ -32,10 +32,17 @@ public class AmadeusAPI {
     private static String EXTENSIVE_SEARCH = "flights/extensive-search";
 
     public static void getTravels(Context context, final AmadeusAPIResponse listener) {
+
         // Instantiate the RequestQueue.
         final RequestQueue queue = Volley.newRequestQueue(context);
+
+        // L'adresse de l'API pour cette requête particulière
         String url = API_URL + EXTENSIVE_SEARCH;
+
+        // Le reste de la requête, comprends l'API Key et les paramètres
+        // (devront être stockés dans des string comme l'adresse de l'API).
         String params = "?apikey=BHwXBlZOnJoABSAuAgdvbYKpGIg5rp1G&origin=NYC&destination=LAS&departure_date=2018-01-31--2018-01-31";
+
         url += params;
 
         // Request a string response from the provided URL.
@@ -46,11 +53,21 @@ public class AmadeusAPI {
                         Log.d(TAG, "onResponse: " + response);
                         try {
                             JSONObject root = new JSONObject(response);
+
+                            // origin est une réponse string
                             String origin = root.getString("origin");
+
+                            // Le reste est répondu dans un tableau
                             JSONArray results = root.getJSONArray("results");
+
+                            // Liste pour mettre le résultat parsé
                             List<TravelModel> travels = new ArrayList<>();
+
+                            // On récupère tous les objets de l'array results et on les met dans la liste
                             for (int i = 0; i < results.length(); i++) {
                                 JSONObject result = results.getJSONObject(i);
+
+                                //Méthode 'sale' - on met les réponses une par une dans un objet
                                 /*TravelModel travel = new TravelModel();
                                 travel.setOrigin(origin);
                                 travel.setDestination(result.getString("destination"));
@@ -59,11 +76,13 @@ public class AmadeusAPI {
                                 travel.setPrice(result.getString("price"));
                                 travel.setAirline(result.getString("airline"));*/
 
+                                // Méthode GSon - les réponses sont mises automatiquement dans un objet grâce à GSon
                                 JsonParser parser = new JsonParser();
                                 JsonElement jsonElement = parser.parse(result.toString());
                                 Gson gson = new Gson();
                                 TravelModel travel = gson.fromJson(jsonElement, TravelModel.class);
                                 travel.setOrigin(origin);
+
                                 travels.add(travel);
                             }
                             listener.onSuccess(travels);
@@ -83,10 +102,10 @@ public class AmadeusAPI {
         queue.add(stringRequest);
     }
 
+    // Listener de la réponse
     public interface AmadeusAPIResponse {
 
         void onSuccess(List<TravelModel> travels);
-
         void onError(String error);
     }
 }
